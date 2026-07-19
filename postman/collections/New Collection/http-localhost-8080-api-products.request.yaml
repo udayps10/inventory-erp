@@ -1,21 +1,9 @@
 $kind: http-request
 name: http://localhost:8080/api/products
 description: ""
-url: http://localhost:8080/api/products/3
-method: PUT
+url: http://localhost:8080/api/auth/register
+method: POST
 body:
   type: json
-  content: "{\r
-
-    \  \"name\": \"Notebook 200pg Updated\",\r
-
-    \  \"sku\": \"NOTEBOOK-200\",\r
-
-    \  \"price\": 50.00,\r
-
-    \  \"brand\": \"Classmate\",\r
-
-    \  \"unit\": \"piece\"\r
-
-    }"
+  content: '{ "username": "shopowner1", "password": "test1234" }'
 order: 1784301108433
