@@ -1,2 +1,6 @@
 $kind: collection
 name: New Collection
+variables:
+  - key: supabase_service_role_api_key_1cws
+    secret: true
+    disabled: false
