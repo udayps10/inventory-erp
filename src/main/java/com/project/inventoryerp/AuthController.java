@@ -29,8 +29,7 @@ public class AuthController {
         emailService.sendRegistrationEmail(request.getEmail(), request.getUsername());
 
         return "User registered successfully";
-    }
-    @PostMapping("/login")
+    }@PostMapping("/login")
     public String login(@RequestBody AuthRequest request) {
         User user = userRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new RuntimeException("Invalid username or password"));
@@ -41,4 +40,5 @@ public class AuthController {
 
         return jwtUtil.generateToken(user.getUsername());
     }
+    
 }
