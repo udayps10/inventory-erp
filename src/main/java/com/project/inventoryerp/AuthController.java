@@ -14,17 +14,22 @@ public class AuthController {
     private PasswordEncoder passwordEncoder;
     @Autowired
     private JwtUtil jwtUtil;
+    @Autowired
+    private EmailService emailService;
 
     @PostMapping("/register")
     public String register(@RequestBody AuthRequest request) {
         User user = new User();
         user.setUsername(request.getUsername());
-        user.setPassword(passwordEncoder.encode(request.getPassword())); // encrypted, never plain
+        user.setEmail(request.getEmail());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setRole("SHOPKEEPER");
         userRepository.save(user);
+
+        emailService.sendRegistrationEmail(request.getEmail(), request.getUsername());
+
         return "User registered successfully";
     }
-
     @PostMapping("/login")
     public String login(@RequestBody AuthRequest request) {
         User user = userRepository.findByUsername(request.getUsername())
