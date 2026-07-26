@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/products")
@@ -44,7 +45,16 @@ public class ProductController {
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
+    @GetMapping("/barcode/{code}")
+    public ResponseEntity<Product> getProductByBarcode(@PathVariable String code) {
+        Optional<Product> product = productRepository.findByBarcode(code);
 
+        if (product.isPresent()) {
+            return ResponseEntity.ok(product.get());
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
         if (!productRepository.existsById(id)) {
