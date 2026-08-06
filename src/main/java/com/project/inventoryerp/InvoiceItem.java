@@ -3,6 +3,8 @@ package com.project.inventoryerp;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 @Entity
 @Table(name = "invoice_items")
 public class InvoiceItem {
@@ -10,11 +12,10 @@ public class InvoiceItem {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
+    @JsonIgnore
     @ManyToOne
     @JoinColumn(name = "invoice_id", nullable = false)
     private Invoice invoice;
-
     @ManyToOne
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
@@ -24,6 +25,12 @@ public class InvoiceItem {
 
     @Column(nullable = false)
     private BigDecimal price;
+
+    private BigDecimal taxableAmount;
+    private BigDecimal gstPercent;
+    private BigDecimal cgstAmount;
+    private BigDecimal sgstAmount;
+    private BigDecimal totalAmount;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -35,4 +42,15 @@ public class InvoiceItem {
     public void setQuantity(Integer quantity) { this.quantity = quantity; }
     public BigDecimal getPrice() { return price; }
     public void setPrice(BigDecimal price) { this.price = price; }
+
+    public BigDecimal getTaxableAmount() { return taxableAmount; }
+    public void setTaxableAmount(BigDecimal taxableAmount) { this.taxableAmount = taxableAmount; }
+    public BigDecimal getGstPercent() { return gstPercent; }
+    public void setGstPercent(BigDecimal gstPercent) { this.gstPercent = gstPercent; }
+    public BigDecimal getCgstAmount() { return cgstAmount; }
+    public void setCgstAmount(BigDecimal cgstAmount) { this.cgstAmount = cgstAmount; }
+    public BigDecimal getSgstAmount() { return sgstAmount; }
+    public void setSgstAmount(BigDecimal sgstAmount) { this.sgstAmount = sgstAmount; }
+    public BigDecimal getTotalAmount() { return totalAmount; }
+    public void setTotalAmount(BigDecimal totalAmount) { this.totalAmount = totalAmount; }
 }
