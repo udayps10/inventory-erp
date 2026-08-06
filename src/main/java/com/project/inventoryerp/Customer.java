@@ -15,7 +15,11 @@ public class Customer {
 
     private String phone;
     private String email;
-
+    private String gstin;
+    private String state;
+    @ManyToOne
+    @JoinColumn(name = "business_id")
+    private Business business;
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getName() { return name; }
@@ -24,4 +28,10 @@ public class Customer {
     public void setPhone(String phone) { this.phone = phone; }
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
+    public String getGstin() { return gstin; }
+    public void setGstin(String gstin) { this.gstin = gstin; }
+    public String getState() { return state; }
+    public void setState(String state) { this.state = state; }
+    public Business getBusiness() { return business; }
+    public void setBusiness(Business business) { this.business = business; }
 }
