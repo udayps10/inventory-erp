@@ -9,6 +9,9 @@ public class Supplier {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @ManyToOne
+    @JoinColumn(name = "business_id")
+    private Business business;
 
     @Column(nullable = false)
     private String name;
@@ -16,7 +19,8 @@ public class Supplier {
     private String phone;
     private String email;
     private String address;
-
+    public Business getBusiness() { return business; }
+    public void setBusiness(Business business) { this.business = business; }
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getName() { return name; }
