@@ -25,7 +25,9 @@ public class Purchase {
 
     @Column(nullable = false)
     private Integer quantity;
-
+    @ManyToOne
+    @JoinColumn(name = "business_id")
+    private Business business;
     @Column(nullable = false)
     private java.math.BigDecimal price;
 
@@ -36,7 +38,8 @@ public class Purchase {
     protected void onCreate() {
         purchaseDate = LocalDateTime.now();
     }
-
+    public Business getBusiness() { return business; }
+    public void setBusiness(Business business) { this.business = business; }
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public Supplier getSupplier() { return supplier; }
