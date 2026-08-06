@@ -1,16 +1,13 @@
 package com.project.inventoryerp;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import jakarta.persistence.Column;
+
+import jakarta.persistence.*;
 import java.math.BigDecimal;
 
 @Entity
-@Table(name = "products")
+@Table(name = "products", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"business_id", "sku"}),
+        @UniqueConstraint(columnNames = {"business_id", "barcode"})
+})
 public class Product {
 
     @Id
@@ -19,10 +16,8 @@ public class Product {
 
     @Column(nullable = false)
     private String name;
-    @ManyToOne
-    @JoinColumn(name = "category_id")
-    private Category category;
-    @Column(nullable = false, unique = true)
+
+    @Column(nullable = false)
     private String sku;
 
     @Column(nullable = false)
@@ -30,11 +25,19 @@ public class Product {
 
     private String brand;
     private String unit;
-
-    @Column(unique = true)
     private String barcode;
-    public Category getCategory() { return category; }
-    public void setCategory(Category category) { this.category = category; }
+
+    @ManyToOne
+    @JoinColumn(name = "category_id")
+    private Category category;
+
+    private BigDecimal gstPercent;
+    private String hsnCode;
+
+    @ManyToOne
+    @JoinColumn(name = "business_id")
+    private Business business;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getName() { return name; }
@@ -49,4 +52,12 @@ public class Product {
     public void setUnit(String unit) { this.unit = unit; }
     public String getBarcode() { return barcode; }
     public void setBarcode(String barcode) { this.barcode = barcode; }
+    public Category getCategory() { return category; }
+    public void setCategory(Category category) { this.category = category; }
+    public BigDecimal getGstPercent() { return gstPercent; }
+    public void setGstPercent(BigDecimal gstPercent) { this.gstPercent = gstPercent; }
+    public String getHsnCode() { return hsnCode; }
+    public void setHsnCode(String hsnCode) { this.hsnCode = hsnCode; }
+    public Business getBusiness() { return business; }
+    public void setBusiness(Business business) { this.business = business; }
 }
