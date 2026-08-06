@@ -5,7 +5,9 @@ import jakarta.persistence.*;
 @Entity
 @Table(name = "warehouses")
 public class Warehouse {
-
+	@ManyToOne
+	@JoinColumn(name = "business_id")
+	private Business business;
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -14,7 +16,8 @@ public class Warehouse {
     private String name;
 
     private String location;
-
+    public Business getBusiness() { return business; }
+    public void setBusiness(Business business) { this.business = business; }
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getName() { return name; }
