@@ -7,7 +7,8 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
-
+	@Autowired
+	private BusinessRepository businessRepository;
     @Autowired
     private UserRepository userRepository;
     @Autowired
@@ -19,13 +20,18 @@ public class AuthController {
 
     @PostMapping("/register")
     public String register(@RequestBody AuthRequest request) {
+        Business business = new Business();
+        business.setName(request.getBusinessName());
+        Business savedBusiness = businessRepository.save(business);
+
         User user = new User();
         user.setUsername(request.getUsername());
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setRole("SHOPKEEPER");
+        user.setBusiness(savedBusiness);
         userRepository.save(user);
-
+        user.setActive(true); 
         emailService.sendRegistrationEmail(request.getEmail(), request.getUsername());
 
         return "User registered successfully";
