@@ -19,6 +19,10 @@ public class StockMovement {
     @JoinColumn(name = "warehouse_id", nullable = false)
     private Warehouse warehouse;
 
+    @ManyToOne
+    @JoinColumn(name = "business_id")
+    private Business business;
+
     @Column(nullable = false)
     private Integer quantityChange; // +100 purchase, -5 sale, -2 damage
 
@@ -41,6 +45,8 @@ public class StockMovement {
     public void setProduct(Product product) { this.product = product; }
     public Warehouse getWarehouse() { return warehouse; }
     public void setWarehouse(Warehouse warehouse) { this.warehouse = warehouse; }
+    public Business getBusiness() { return business; }
+    public void setBusiness(Business business) { this.business = business; }
     public Integer getQuantityChange() { return quantityChange; }
     public void setQuantityChange(Integer quantityChange) { this.quantityChange = quantityChange; }
     public String getReason() { return reason; }
@@ -49,4 +55,3 @@ public class StockMovement {
     public void setReferenceId(String referenceId) { this.referenceId = referenceId; }
     public LocalDateTime getCreatedAt() { return createdAt; }
 }
-
