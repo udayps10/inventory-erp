@@ -6,14 +6,14 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
-@Table(name = "invoices")
+@Table(name = "invoices", uniqueConstraints = @UniqueConstraint(columnNames = {"business_id", "invoice_number"}))
 public class Invoice {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private String invoiceNumber;
 
     @ManyToOne
@@ -24,7 +24,7 @@ public class Invoice {
     private BigDecimal totalAmount;
 
     @Column(nullable = false)
-    private String paymentMode; // CASH, UPI, CARD, CREDIT
+    private String paymentMode;
 
     @Column(updatable = false)
     private LocalDateTime createdAt;
@@ -32,10 +32,12 @@ public class Invoice {
     @OneToMany(mappedBy = "invoice", cascade = CascadeType.ALL)
     private List<InvoiceItem> items;
 
+    @ManyToOne
+    @JoinColumn(name = "business_id")
+    private Business business;
+
     @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-    }
+    protected void onCreate() { createdAt = LocalDateTime.now(); }
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -50,4 +52,6 @@ public class Invoice {
     public LocalDateTime getCreatedAt() { return createdAt; }
     public List<InvoiceItem> getItems() { return items; }
     public void setItems(List<InvoiceItem> items) { this.items = items; }
+    public Business getBusiness() { return business; }
+    public void setBusiness(Business business) { this.business = business; }
 }
