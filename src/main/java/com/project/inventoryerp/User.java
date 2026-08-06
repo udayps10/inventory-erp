@@ -19,12 +19,16 @@ public class User {
     @JsonIgnore
     @Column(nullable = false)
     private String password;
+    @ManyToOne
+    @JoinColumn(name = "business_id")
+    private Business business;
 
     @Column(nullable = false)
     private String role;
 
     private boolean active;
-
+    public Business getBusiness() { return business; }
+    public void setBusiness(Business business) { this.business = business; }
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getEmail() { return email; }
