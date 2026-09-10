@@ -16,9 +16,49 @@ public class DashboardController {
         return "login";
     }
 
+    @GetMapping("/register")
+    public String registerPage() {
+        return "register";
+    }
+
     @GetMapping("/dashboard")
     public String dashboard() {
         return "dashboard";
+    }
+
+    @GetMapping("/products")
+    public String products() {
+        return "products";
+    }
+
+    @GetMapping("/customers")
+    public String customers() {
+        return "customers";
+    }
+
+    @GetMapping("/suppliers")
+    public String suppliers() {
+        return "suppliers";
+    }
+
+    @GetMapping("/warehouses")
+    public String warehouses() {
+        return "warehouses";
+    }
+
+    @GetMapping("/categories")
+    public String categories() {
+        return "categories";
+    }
+
+    @GetMapping("/purchases")
+    public String purchases() {
+        return "purchases";
+    }
+
+    @GetMapping("/sales")
+    public String sales() {
+        return "sales";
     }
 
     @GetMapping("/stock")

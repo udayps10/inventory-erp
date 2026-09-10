@@ -34,6 +34,19 @@ public class WarehouseController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<Warehouse> updateWarehouse(@PathVariable Long id, @RequestBody Warehouse updated) {
+        Long businessId = currentUserService.getCurrentBusiness().getId();
+        return warehouseRepository.findById(id)
+                .filter(w -> w.getBusiness() != null && w.getBusiness().getId().equals(businessId))
+                .map(warehouse -> {
+                    warehouse.setName(updated.getName());
+                    warehouse.setLocation(updated.getLocation());
+                    return ResponseEntity.ok(warehouseRepository.save(warehouse));
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteWarehouse(@PathVariable Long id) {
         Long businessId = currentUserService.getCurrentBusiness().getId();

@@ -3,6 +3,7 @@ package com.project.inventoryerp;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
@@ -50,5 +51,14 @@ public class SaleController {
     public Page<Sale> getAllSales(Pageable pageable) {
         Long businessId = currentUserService.getCurrentBusiness().getId();
         return saleRepository.findAllByBusinessId(businessId, pageable);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Sale> getSaleById(@PathVariable Long id) {
+        Long businessId = currentUserService.getCurrentBusiness().getId();
+        return saleRepository.findById(id)
+                .filter(s -> s.getBusiness() != null && s.getBusiness().getId().equals(businessId))
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 }

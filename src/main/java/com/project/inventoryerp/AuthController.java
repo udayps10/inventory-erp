@@ -4,12 +4,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
-	@Autowired
-	private BusinessRepository businessRepository;
+    @Autowired
+    private BusinessRepository businessRepository;
     @Autowired
     private UserRepository userRepository;
     @Autowired
@@ -20,7 +21,7 @@ public class AuthController {
     private EmailService emailService;
 
     @PostMapping("/register")
-    public String register(@Valid @RequestBody AuthRequest request) {
+    public Map<String, Object> register(@Valid @RequestBody AuthRequest request) {
         Business business = new Business();
         business.setName(request.getBusinessName());
         Business savedBusiness = businessRepository.save(business);
@@ -30,14 +31,16 @@ public class AuthController {
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setRole("SHOPKEEPER");
+        user.setActive(true);
         user.setBusiness(savedBusiness);
         userRepository.save(user);
-        user.setActive(true); 
-        emailService.sendRegistrationEmail(request.getEmail(), request.getUsername());
 
-        return "User registered successfully";
-    }@PostMapping("/login")
-    public String login(@Valid @RequestBody AuthRequest request) {
+        String token = jwtUtil.generateToken(user.getUsername());
+        return Map.of("token", token, "message", "User registered successfully");
+    }
+
+    @PostMapping("/login")
+    public Map<String, String> login(@Valid @RequestBody AuthRequest request) {
         User user = userRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new RuntimeException("Invalid username or password"));
 
@@ -45,7 +48,7 @@ public class AuthController {
             throw new RuntimeException("Invalid username or password");
         }
 
-        return jwtUtil.generateToken(user.getUsername());
+        String token = jwtUtil.generateToken(user.getUsername());
+        return Map.of("token", token);
     }
-    
 }

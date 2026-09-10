@@ -34,6 +34,18 @@ public class CategoryController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<Category> updateCategory(@PathVariable Long id, @RequestBody Category updated) {
+        Long businessId = currentUserService.getCurrentBusiness().getId();
+        return categoryRepository.findById(id)
+                .filter(c -> c.getBusiness() != null && c.getBusiness().getId().equals(businessId))
+                .map(category -> {
+                    category.setName(updated.getName());
+                    return ResponseEntity.ok(categoryRepository.save(category));
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteCategory(@PathVariable Long id) {
         Long businessId = currentUserService.getCurrentBusiness().getId();

@@ -29,6 +29,7 @@ public class InventoryController {
         inventory.setProduct(product);
         inventory.setWarehouse(warehouse);
         inventory.setQuantity(request.getQuantity());
+        inventory.setBusiness(business);
         return inventoryRepository.save(inventory);
     }
 

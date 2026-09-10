@@ -34,6 +34,22 @@ public class CustomerController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<Customer> updateCustomer(@PathVariable Long id, @RequestBody Customer updated) {
+        Long businessId = currentUserService.getCurrentBusiness().getId();
+        return customerRepository.findById(id)
+                .filter(c -> c.getBusiness() != null && c.getBusiness().getId().equals(businessId))
+                .map(customer -> {
+                    customer.setName(updated.getName());
+                    customer.setPhone(updated.getPhone());
+                    customer.setEmail(updated.getEmail());
+                    customer.setGstin(updated.getGstin());
+                    customer.setState(updated.getState());
+                    return ResponseEntity.ok(customerRepository.save(customer));
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteCustomer(@PathVariable Long id) {
         Long businessId = currentUserService.getCurrentBusiness().getId();

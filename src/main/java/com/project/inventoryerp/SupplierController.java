@@ -33,4 +33,30 @@ public class SupplierController {
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Supplier> updateSupplier(@PathVariable Long id, @RequestBody Supplier updated) {
+        Long businessId = currentUserService.getCurrentBusiness().getId();
+        return supplierRepository.findById(id)
+                .filter(s -> s.getBusiness() != null && s.getBusiness().getId().equals(businessId))
+                .map(supplier -> {
+                    supplier.setName(updated.getName());
+                    supplier.setPhone(updated.getPhone());
+                    supplier.setEmail(updated.getEmail());
+                    supplier.setAddress(updated.getAddress());
+                    return ResponseEntity.ok(supplierRepository.save(supplier));
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteSupplier(@PathVariable Long id) {
+        Long businessId = currentUserService.getCurrentBusiness().getId();
+        boolean exists = supplierRepository.findById(id)
+                .filter(s -> s.getBusiness() != null && s.getBusiness().getId().equals(businessId))
+                .isPresent();
+        if (!exists) return ResponseEntity.notFound().build();
+        supplierRepository.deleteById(id);
+        return ResponseEntity.noContent().build();
+    }
 }
