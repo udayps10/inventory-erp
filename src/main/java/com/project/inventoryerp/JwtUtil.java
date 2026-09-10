@@ -13,7 +13,7 @@ import java.util.Date;
 @Component
 public class JwtUtil {
 
-    @Value("${JWT_SECRET:defaultSecretKeyThatShouldBeChangedInProduction1234567890}")
+    @Value("${app.jwt-secret:changeThisToASecretKeyAtLeast32Chars}")
     private String secret;
 
     private Key key;
