@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Purchase vs Sales - Inventory ERP</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+</head>
+<body>
+    <div th:replace="~{fragments/sidebar}"></div>
+
+    <div class="main">
+        <div class="topbar">
+            <h1>Purchase vs Sales</h1>
+            <div class="topbar-right">
+                <select class="form-control" id="daysSelect" style="width:auto">
+                    <option value="7">Last 7 days</option>
+                    <option value="30" selected>Last 30 days</option>
+                    <option value="90">Last 90 days</option>
+                    <option value="180">Last 6 months</option>
+                </select>
+                <button class="btn btn-outline" onclick="logout()">Logout</button>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="stats-grid">
+                <div class="stat-card blue">
+                    <div class="label">Total Purchases</div>
+                    <div class="value" id="totalPurchases">-</div>
+                </div>
+                <div class="stat-card green">
+                    <div class="label">Total Sales</div>
+                    <div class="value" id="totalSales">-</div>
+                </div>
+                <div class="stat-card purple">
+                    <div class="label">Net (Sales - Purchases)</div>
+                    <div class="value" id="netDiff">-</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header"><h3>Purchase vs Sales Over Time</h3></div>
+                <div class="card-body">
+                    <div class="chart-container"><canvas id="compareChart"></canvas></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header"><h3>Daily Breakdown</h3></div>
+                <div class="card-body">
+                    <div class="table-container" id="compareTable">
+                        <div class="loading"><div class="spinner"></div>Loading...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/app.js"></script>
+    <script>
+        if (!isLoggedIn()) window.location.href = '/login';
+
+        async function loadComparison() {
+            const days = document.getElementById('daysSelect').value;
+            const data = await apiGet('/analytics/purchase-vs-sales?days=' + days);
+
+            if (!data || !data.length) {
+                showEmpty('compareTable', 'No data found');
+                return;
+            }
+
+            const totalPurchases = data.reduce((s, d) => s + Number(d.totalPurchases), 0);
+            const totalSales = data.reduce((s, d) => s + Number(d.totalSales), 0);
+
+            document.getElementById('totalPurchases').textContent = formatCurrency(totalPurchases);
+            document.getElementById('totalSales').textContent = formatCurrency(totalSales);
+
+            const net = totalSales - totalPurchases;
+            const netEl = document.getElementById('netDiff');
+            netEl.textContent = formatCurrency(Math.abs(net));
+            netEl.style.color = net >= 0 ? '#22c55e' : '#ef4444';
+
+            renderChart(data);
+            renderTable(data);
+        }
+
+        function renderChart(data) {
+            new Chart(document.getElementById('compareChart'), {
+                type: 'bar',
+                data: {
+                    labels: data.map(d => d.date.substring(5)),
+                    datasets: [
+                        {
+                            label: 'Purchases',
+                            data: data.map(d => d.totalPurchases),
+                            backgroundColor: 'rgba(59,130,246,0.7)',
+                            borderColor: '#3b82f6',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Sales',
+                            data: data.map(d => d.totalSales),
+                            backgroundColor: 'rgba(34,197,94,0.7)',
+                            borderColor: '#22c55e',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'top' } },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { callback: v => '₹' + (v/1000).toFixed(0) + 'k' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        function renderTable(data) {
+            let html = '<table><thead><tr><th>Date</th><th>Purchases</th><th>Sales</th><th>Net</th></tr></thead><tbody>';
+            data.slice().reverse().forEach(r => {
+                const net = Number(r.totalSales) - Number(r.totalPurchases);
+                const netClass = net >= 0 ? 'badge-green' : 'badge-red';
+                html += '<tr><td>' + r.date + '</td><td>' + formatCurrency(r.totalPurchases) + '</td><td>' + formatCurrency(r.totalSales) + '</td><td><span class="badge ' + netClass + '">' + formatCurrency(Math.abs(net)) + '</span></td></tr>';
+            });
+            html += '</tbody></table>';
+            document.getElementById('compareTable').innerHTML = html;
+        }
+
+        document.getElementById('daysSelect').addEventListener('change', loadComparison);
+        loadComparison();
+    </script>
+</body>
+</html>

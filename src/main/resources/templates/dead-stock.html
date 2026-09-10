@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dead Stock - Inventory ERP</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+</head>
+<body>
+    <div th:replace="~{fragments/sidebar}"></div>
+
+    <div class="main">
+        <div class="topbar">
+            <h1>Dead Stock</h1>
+            <div class="topbar-right">
+                <select class="form-control" id="daysSelect" style="width:auto">
+                    <option value="30">No sales in 30 days</option>
+                    <option value="60">No sales in 60 days</option>
+                    <option value="90" selected>No sales in 90 days</option>
+                    <option value="180">No sales in 6 months</option>
+                </select>
+                <button class="btn btn-outline" onclick="logout()">Logout</button>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="stats-grid">
+                <div class="stat-card red">
+                    <div class="label">Dead Stock Items</div>
+                    <div class="value" id="deadCount">-</div>
+                </div>
+                <div class="stat-card orange">
+                    <div class="label">Dead Stock Value</div>
+                    <div class="value" id="deadValue">-</div>
+                </div>
+                <div class="stat-card blue">
+                    <div class="label">Total Units</div>
+                    <div class="value" id="deadUnits">-</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header"><h3>Dead Stock Value Breakdown</h3></div>
+                <div class="card-body">
+                    <div class="chart-container"><canvas id="deadChart"></canvas></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header"><h3>Dead Stock Items</h3></div>
+                <div class="card-body">
+                    <div class="table-container" id="deadTable">
+                        <div class="loading"><div class="spinner"></div>Loading...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/app.js"></script>
+    <script>
+        if (!isLoggedIn()) window.location.href = '/login';
+
+        async function loadDeadStock() {
+            const days = document.getElementById('daysSelect').value;
+            const data = await apiGet('/analytics/dead-stock?days=' + days);
+
+            if (!data || !data.length) {
+                showEmpty('deadTable', 'No dead stock found');
+                document.getElementById('deadCount').textContent = '0';
+                document.getElementById('deadValue').textContent = '₹0';
+                document.getElementById('deadUnits').textContent = '0';
+                return;
+            }
+
+            const totalValue = data.reduce((s, d) => s + Number(d.stockValue), 0);
+            const totalUnits = data.reduce((s, d) => s + d.currentStock, 0);
+
+            document.getElementById('deadCount').textContent = data.length;
+            document.getElementById('deadValue').textContent = formatCurrency(totalValue);
+            document.getElementById('deadUnits').textContent = formatNumber(totalUnits);
+
+            renderChart(data.slice(0, 10));
+            renderTable(data);
+        }
+
+        function renderChart(data) {
+            new Chart(document.getElementById('deadChart'), {
+                type: 'bar',
+                data: {
+                    labels: data.map(d => d.productName),
+                    datasets: [{
+                        label: 'Stock Value',
+                        data: data.map(d => d.stockValue),
+                        backgroundColor: '#ef4444'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { beginAtZero: true, ticks: { callback: v => '₹' + (v/1000).toFixed(0) + 'k' } },
+                        y: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        function renderTable(data) {
+            let html = '<table><thead><tr><th>#</th><th>Product</th><th>SKU</th><th>Stock</th><th>Unit Price</th><th>Stock Value</th><th>Days Inactive</th></tr></thead><tbody>';
+            data.forEach((r, i) => {
+                html += '<tr><td>' + (i + 1) + '</td><td>' + r.productName + '</td><td>' + r.sku + '</td><td>' + r.currentStock + '</td><td>' + formatCurrency(r.unitPrice) + '</td><td>' + formatCurrency(r.stockValue) + '</td><td>' + r.daysSinceLastSale + ' days</td></tr>';
+            });
+            html += '</tbody></table>';
+            document.getElementById('deadTable').innerHTML = html;
+        }
+
+        document.getElementById('daysSelect').addEventListener('change', loadDeadStock);
+        loadDeadStock();
+    </script>
+</body>
+</html>

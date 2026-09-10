@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ABC Analysis - Inventory ERP</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+</head>
+<body>
+    <div th:replace="~{fragments/sidebar}"></div>
+
+    <div class="main">
+        <div class="topbar">
+            <h1>ABC Analysis</h1>
+            <div class="topbar-right">
+                <select class="form-control" id="daysSelect" style="width:auto">
+                    <option value="30">Last 30 days</option>
+                    <option value="90" selected>Last 90 days</option>
+                    <option value="180">Last 6 months</option>
+                    <option value="365">Last year</option>
+                </select>
+                <button class="btn btn-outline" onclick="logout()">Logout</button>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="stats-grid">
+                <div class="stat-card red">
+                    <div class="label">Class A (Top 80%)</div>
+                    <div class="value" id="countA">-</div>
+                    <div class="sub">High priority</div>
+                </div>
+                <div class="stat-card orange">
+                    <div class="label">Class B (Next 15%)</div>
+                    <div class="value" id="countB">-</div>
+                    <div class="sub">Medium priority</div>
+                </div>
+                <div class="stat-card gray">
+                    <div class="label">Class C (Last 5%)</div>
+                    <div class="value" id="countC">-</div>
+                    <div class="sub">Low priority</div>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header"><h3>Classification Distribution</h3></div>
+                    <div class="card-body">
+                        <div class="chart-container"><canvas id="abcChart"></canvas></div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><h3>Revenue Contribution</h3></div>
+                    <div class="card-body">
+                        <div class="chart-container"><canvas id="revenueChart"></canvas></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header"><h3>Class A - High Priority Products</h3></div>
+                <div class="card-body">
+                    <div class="table-container" id="tableA">
+                        <div class="loading"><div class="spinner"></div>Loading...</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header"><h3>Class B - Medium Priority Products</h3></div>
+                <div class="card-body">
+                    <div class="table-container" id="tableB">
+                        <div class="loading"><div class="spinner"></div>Loading...</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header"><h3>Class C - Low Priority Products</h3></div>
+                <div class="card-body">
+                    <div class="table-container" id="tableC">
+                        <div class="loading"><div class="spinner"></div>Loading...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/app.js"></script>
+    <script>
+        if (!isLoggedIn()) window.location.href = '/login';
+
+        async function loadAbc() {
+            const days = document.getElementById('daysSelect').value;
+            const data = await apiGet('/analytics/abc-analysis?days=' + days);
+
+            if (!data) return;
+
+            const aItems = data.A || [];
+            const bItems = data.B || [];
+            const cItems = data.C || [];
+
+            document.getElementById('countA').textContent = aItems.length;
+            document.getElementById('countB').textContent = bItems.length;
+            document.getElementById('countC').textContent = cItems.length;
+
+            renderPieChart(aItems.length, bItems.length, cItems.length);
+            renderRevenueChart(aItems, bItems, cItems);
+            renderTable('tableA', aItems);
+            renderTable('tableB', bItems);
+            renderTable('tableC', cItems);
+        }
+
+        function renderPieChart(a, b, c) {
+            new Chart(document.getElementById('abcChart'), {
+                type: 'pie',
+                data: {
+                    labels: ['Class A', 'Class B', 'Class C'],
+                    datasets: [{
+                        data: [a, b, c],
+                        backgroundColor: ['#ef4444', '#f97316', '#94a3b8']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'right' } }
+                }
+            });
+        }
+
+        function renderRevenueChart(aItems, bItems, cItems) {
+            const aRev = aItems.reduce((s, i) => s + Number(i.revenue), 0);
+            const bRev = bItems.reduce((s, i) => s + Number(i.revenue), 0);
+            const cRev = cItems.reduce((s, i) => s + Number(i.revenue), 0);
+
+            new Chart(document.getElementById('revenueChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['Class A', 'Class B', 'Class C'],
+                    datasets: [{
+                        label: 'Revenue',
+                        data: [aRev, bRev, cRev],
+                        backgroundColor: ['#ef4444', '#f97316', '#94a3b8']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { callback: v => '₹' + (v/1000).toFixed(0) + 'k' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        function renderTable(elementId, data) {
+            if (!data.length) {
+                showEmpty(elementId, 'No products in this class');
+                return;
+            }
+            let html = '<table><thead><tr><th>#</th><th>Product</th><th>SKU</th><th>Revenue</th><th>% of Total</th><th>Class</th></tr></thead><tbody>';
+            data.forEach((r, i) => {
+                html += '<tr><td>' + (i + 1) + '</td><td>' + r.productName + '</td><td>' + r.sku + '</td><td>' + formatCurrency(r.revenue) + '</td><td>' + r.percentOfTotal + '%</td><td>' + getAbcBadge(r.class) + '</td></tr>';
+            });
+            html += '</tbody></table>';
+            document.getElementById(elementId).innerHTML = html;
+        }
+
+        document.getElementById('daysSelect').addEventListener('change', loadAbc);
+        loadAbc();
+    </script>
+</body>
+</html>

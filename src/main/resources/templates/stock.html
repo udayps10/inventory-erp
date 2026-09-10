@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Levels - Inventory ERP</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+</head>
+<body>
+    <div th:replace="~{fragments/sidebar}"></div>
+
+    <div class="main">
+        <div class="topbar">
+            <h1>Stock Levels</h1>
+            <div class="topbar-right">
+                <select class="form-control" id="thresholdSelect" style="width:auto">
+                    <option value="5">Below 5 units</option>
+                    <option value="10" selected>Below 10 units</option>
+                    <option value="20">Below 20 units</option>
+                    <option value="50">Below 50 units</option>
+                </select>
+                <button class="btn btn-outline" onclick="logout()">Logout</button>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="stats-grid">
+                <div class="stat-card blue">
+                    <div class="label">Total SKUs</div>
+                    <div class="value" id="totalSKUs">-</div>
+                </div>
+                <div class="stat-card green">
+                    <div class="label">Total Stock Value</div>
+                    <div class="value" id="totalValue">-</div>
+                </div>
+                <div class="stat-card orange">
+                    <div class="label">Low Stock Items</div>
+                    <div class="value" id="lowStockCount">-</div>
+                </div>
+                <div class="stat-card red">
+                    <div class="label">Out of Stock</div>
+                    <div class="value" id="outOfStock">-</div>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header"><h3>Stock by Warehouse</h3></div>
+                    <div class="card-body">
+                        <div class="chart-container"><canvas id="warehouseChart"></canvas></div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><h3>Stock Value by Warehouse</h3></div>
+                    <div class="card-body">
+                        <div class="chart-container"><canvas id="valueChart"></canvas></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3>Low Stock Items</h3>
+                </div>
+                <div class="card-body">
+                    <div class="table-container" id="lowStockTable">
+                        <div class="loading"><div class="spinner"></div>Loading...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/app.js"></script>
+    <script>
+        if (!isLoggedIn()) window.location.href = '/login';
+
+        async function loadStock() {
+            const threshold = document.getElementById('thresholdSelect').value;
+            const [stockValue, lowStock, warehouse] = await Promise.all([
+                apiGet('/reports/total-stock-value'),
+                apiGet('/reports/low-stock?threshold=' + threshold),
+                apiGet('/analytics/warehouse-stock')
+            ]);
+
+            if (stockValue) {
+                document.getElementById('totalSKUs').textContent = stockValue.totalSKUs;
+                document.getElementById('totalValue').textContent = formatCurrency(stockValue.totalStockValue);
+            }
+            if (lowStock) {
+                document.getElementById('lowStockCount').textContent = lowStock.length;
+                renderLowStock(lowStock);
+            }
+            if (warehouse) {
+                const outOfStock = warehouse.reduce((sum, w) => sum + (w.totalQuantity === 0 ? 1 : 0), 0);
+                document.getElementById('outOfStock').textContent = outOfStock;
+                renderWarehouseChart(warehouse);
+                renderValueChart(warehouse);
+            }
+        }
+
+        function renderLowStock(data) {
+            if (!data.length) { showEmpty('lowStockTable', 'No low stock items found'); return; }
+            let html = '<table><thead><tr><th>Product</th><th>SKU</th><th>Warehouse</th><th>Current</th><th>Threshold</th><th>Deficit</th><th>Status</th></tr></thead><tbody>';
+            data.forEach(r => {
+                const badge = r.currentQuantity === 0 ? '<span class="badge badge-red">Out</span>' : '<span class="badge badge-orange">Low</span>';
+                html += '<tr><td>' + r.productName + '</td><td>' + r.sku + '</td><td>' + r.warehouseName + '</td><td>' + r.currentQuantity + '</td><td>' + r.threshold + '</td><td>' + r.deficit + '</td><td>' + badge + '</td></tr>';
+            });
+            html += '</tbody></table>';
+            document.getElementById('lowStockTable').innerHTML = html;
+        }
+
+        function renderWarehouseChart(data) {
+            new Chart(document.getElementById('warehouseChart'), {
+                type: 'bar',
+                data: {
+                    labels: data.map(d => d.warehouseName),
+                    datasets: [{
+                        label: 'Quantity',
+                        data: data.map(d => d.totalQuantity),
+                        backgroundColor: ['#3b82f6', '#22c55e', '#f97316', '#8b5cf6', '#ef4444']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true }, x: { grid: { display: false } } }
+                }
+            });
+        }
+
+        function renderValueChart(data) {
+            new Chart(document.getElementById('valueChart'), {
+                type: 'bar',
+                data: {
+                    labels: data.map(d => d.warehouseName),
+                    datasets: [{
+                        label: 'Value',
+                        data: data.map(d => d.totalValue),
+                        backgroundColor: ['#06b6d4', '#22c55e', '#f97316', '#8b5cf6', '#ef4444']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, ticks: { callback: v => '₹' + (v/1000).toFixed(0) + 'k' } }, x: { grid: { display: false } } }
+                }
+            });
+        }
+
+        document.getElementById('thresholdSelect').addEventListener('change', loadStock);
+        loadStock();
+    </script>
+</body>
+</html>

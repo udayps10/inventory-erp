@@ -1,10 +1,11 @@
 package com.project.inventoryerp;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
-import java.util.List;
-import java.util.stream.Collectors;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/purchases")
@@ -19,7 +20,7 @@ public class PurchaseController {
 
     @PostMapping
     @Transactional
-    public Purchase createPurchase(@RequestBody PurchaseRequest request) {
+    public Purchase createPurchase(@Valid @RequestBody PurchaseRequest request) {
         Business business = currentUserService.getCurrentBusiness();
 
         Supplier supplier = supplierRepository.findById(request.getSupplierId())
@@ -46,10 +47,8 @@ public class PurchaseController {
     }
 
     @GetMapping
-    public List<Purchase> getAllPurchases() {
+    public Page<Purchase> getAllPurchases(Pageable pageable) {
         Long businessId = currentUserService.getCurrentBusiness().getId();
-        return purchaseRepository.findAll().stream()
-                .filter(p -> p.getBusiness() != null && p.getBusiness().getId().equals(businessId))
-                .collect(Collectors.toList());
+        return purchaseRepository.findAllByBusinessId(businessId, pageable);
     }
 }

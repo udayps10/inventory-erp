@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales Trend - Inventory ERP</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+</head>
+<body>
+    <div th:replace="~{fragments/sidebar}"></div>
+
+    <div class="main">
+        <div class="topbar">
+            <h1>Sales Trend</h1>
+            <div class="topbar-right">
+                <select class="form-control" id="periodSelect" style="width:auto">
+                    <option value="daily">Daily</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="monthly">Monthly</option>
+                </select>
+                <select class="form-control" id="daysSelect" style="width:auto">
+                    <option value="7">Last 7 days</option>
+                    <option value="30" selected>Last 30 days</option>
+                    <option value="90">Last 90 days</option>
+                    <option value="365">Last year</option>
+                </select>
+                <button class="btn btn-outline" onclick="logout()">Logout</button>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="stats-grid" id="statsCards">
+                <div class="stat-card blue">
+                    <div class="label">Total Sales</div>
+                    <div class="value" id="totalSales">-</div>
+                </div>
+                <div class="stat-card green">
+                    <div class="label">Total Orders</div>
+                    <div class="value" id="totalOrders">-</div>
+                </div>
+                <div class="stat-card purple">
+                    <div class="label">Total Quantity</div>
+                    <div class="value" id="totalQty">-</div>
+                </div>
+                <div class="stat-card orange">
+                    <div class="label">Avg per Day</div>
+                    <div class="value" id="avgDaily">-</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header"><h3>Sales Over Time</h3></div>
+                <div class="card-body">
+                    <div class="chart-container"><canvas id="salesChart"></canvas></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header"><h3>Daily Breakdown</h3></div>
+                <div class="card-body">
+                    <div class="table-container" id="salesTable">
+                        <div class="loading"><div class="spinner"></div>Loading...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/app.js"></script>
+    <script>
+        if (!isLoggedIn()) window.location.href = '/login';
+        let chart = null;
+
+        async function loadSalesTrend() {
+            const period = document.getElementById('periodSelect').value;
+            const days = document.getElementById('daysSelect').value;
+            const data = await apiGet('/analytics/sales-trend?period=' + period + '&days=' + days);
+
+            if (!data || !data.length) {
+                showEmpty('salesTable', 'No sales data found');
+                return;
+            }
+
+            const totalSales = data.reduce((s, d) => s + d.totalSales, 0);
+            const totalOrders = data.reduce((s, d) => s + d.totalOrders, 0);
+            const totalQty = data.reduce((s, d) => s + d.totalQuantity, 0);
+
+            document.getElementById('totalSales').textContent = formatCurrency(totalSales);
+            document.getElementById('totalOrders').textContent = formatNumber(totalOrders);
+            document.getElementById('totalQty').textContent = formatNumber(totalQty);
+            document.getElementById('avgDaily').textContent = formatCurrency(totalSales / data.length);
+
+            renderChart(data);
+            renderTable(data);
+        }
+
+        function renderChart(data) {
+            if (chart) chart.destroy();
+            chart = new Chart(document.getElementById('salesChart'), {
+                type: 'line',
+                data: {
+                    labels: data.map(d => d.date),
+                    datasets: [
+                        {
+                            label: 'Sales',
+                            data: data.map(d => d.totalSales),
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59,130,246,0.08)',
+                            fill: true,
+                            tension: 0.3,
+                            pointRadius: 3,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Orders',
+                            data: data.map(d => d.totalOrders),
+                            borderColor: '#22c55e',
+                            backgroundColor: 'transparent',
+                            borderDash: [5, 5],
+                            tension: 0.3,
+                            pointRadius: 2,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { intersect: false, mode: 'index' },
+                    plugins: { legend: { position: 'top' } },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { callback: v => '₹' + (v/1000).toFixed(0) + 'k' } },
+                        y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        function renderTable(data) {
+            let html = '<table><thead><tr><th>Date</th><th>Sales</th><th>Orders</th><th>Quantity</th><th>Avg Order</th></tr></thead><tbody>';
+            data.slice().reverse().forEach(r => {
+                const avg = r.totalOrders > 0 ? r.totalSales / r.totalOrders : 0;
+                html += '<tr><td>' + r.date + '</td><td>' + formatCurrency(r.totalSales) + '</td><td>' + r.totalOrders + '</td><td>' + r.totalQuantity + '</td><td>' + formatCurrency(avg) + '</td></tr>';
+            });
+            html += '</tbody></table>';
+            document.getElementById('salesTable').innerHTML = html;
+        }
+
+        document.getElementById('periodSelect').addEventListener('change', loadSalesTrend);
+        document.getElementById('daysSelect').addEventListener('change', loadSalesTrend);
+        loadSalesTrend();
+    </script>
+</body>
+</html>

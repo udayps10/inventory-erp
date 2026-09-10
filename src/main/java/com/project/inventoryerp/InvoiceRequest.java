@@ -1,10 +1,21 @@
 package com.project.inventoryerp;
+
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.*;
 import java.util.List;
 
 public class InvoiceRequest {
+    @NotNull(message = "Customer ID is required")
     private Long customerId;
+
+    @NotNull(message = "Warehouse ID is required")
     private Long warehouseId;
+
+    @NotBlank(message = "Payment mode is required")
     private String paymentMode;
+
+    @NotEmpty(message = "Invoice must have at least one item")
+    @Valid
     private List<InvoiceItemRequest> items;
 
     public Long getCustomerId() { return customerId; }

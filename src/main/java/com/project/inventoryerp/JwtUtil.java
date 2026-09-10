@@ -3,16 +3,26 @@ package com.project.inventoryerp;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import jakarta.annotation.PostConstruct;
 import java.security.Key;
 import java.util.Date;
 
 @Component
 public class JwtUtil {
 
-    private final Key key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+    @Value("${JWT_SECRET:defaultSecretKeyThatShouldBeChangedInProduction1234567890}")
+    private String secret;
+
+    private Key key;
     private final long EXPIRATION = 1000 * 60 * 60 * 10; // 10 hours
+
+    @PostConstruct
+    public void init() {
+        this.key = Keys.hmacShaKeyFor(secret.getBytes());
+    }
 
     public String generateToken(String username) {
         return Jwts.builder()

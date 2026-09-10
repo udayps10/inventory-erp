@@ -1,10 +1,10 @@
 package com.project.inventoryerp;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/categories")
@@ -20,11 +20,9 @@ public class CategoryController {
     }
 
     @GetMapping
-    public List<Category> getAllCategories() {
+    public Page<Category> getAllCategories(Pageable pageable) {
         Long businessId = currentUserService.getCurrentBusiness().getId();
-        return categoryRepository.findAll().stream()
-                .filter(c -> c.getBusiness() != null && c.getBusiness().getId().equals(businessId))
-                .collect(Collectors.toList());
+        return categoryRepository.findAllByBusinessId(businessId, pageable);
     }
 
     @GetMapping("/{id}")

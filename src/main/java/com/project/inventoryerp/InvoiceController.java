@@ -1,12 +1,14 @@
 package com.project.inventoryerp;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/invoices")
@@ -21,7 +23,7 @@ public class InvoiceController {
 
     @PostMapping
     @Transactional
-    public Invoice createInvoice(@RequestBody InvoiceRequest request) {
+    public Invoice createInvoice(@Valid @RequestBody InvoiceRequest request) {
         Business business = currentUserService.getCurrentBusiness();
 
         Customer customer = customerRepository.findById(request.getCustomerId())
@@ -81,10 +83,8 @@ public class InvoiceController {
     }
 
     @GetMapping
-    public List<Invoice> getAllInvoices() {
+    public Page<Invoice> getAllInvoices(Pageable pageable) {
         Long businessId = currentUserService.getCurrentBusiness().getId();
-        return invoiceRepository.findAll().stream()
-                .filter(i -> i.getBusiness() != null && i.getBusiness().getId().equals(businessId))
-                .collect(Collectors.toList());
+        return invoiceRepository.findAllByBusinessId(businessId, pageable);
     }
 }

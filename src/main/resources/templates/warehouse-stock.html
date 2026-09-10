@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Warehouse Stock - Inventory ERP</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+</head>
+<body>
+    <div th:replace="~{fragments/sidebar}"></div>
+
+    <div class="main">
+        <div class="topbar">
+            <h1>Warehouse Stock</h1>
+            <div class="topbar-right">
+                <button class="btn btn-outline" onclick="logout()">Logout</button>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="stats-grid">
+                <div class="stat-card blue">
+                    <div class="label">Total Warehouses</div>
+                    <div class="value" id="warehouseCount">-</div>
+                </div>
+                <div class="stat-card green">
+                    <div class="label">Total Stock Value</div>
+                    <div class="value" id="totalValue">-</div>
+                </div>
+                <div class="stat-card purple">
+                    <div class="label">Total Units</div>
+                    <div class="value" id="totalUnits">-</div>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header"><h3>Stock Quantity by Warehouse</h3></div>
+                    <div class="card-body">
+                        <div class="chart-container"><canvas id="quantityChart"></canvas></div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><h3>Stock Value by Warehouse</h3></div>
+                    <div class="card-body">
+                        <div class="chart-container"><canvas id="valueChart"></canvas></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header"><h3>Warehouse Details</h3></div>
+                <div class="card-body">
+                    <div class="table-container" id="warehouseTable">
+                        <div class="loading"><div class="spinner"></div>Loading...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/app.js"></script>
+    <script>
+        if (!isLoggedIn()) window.location.href = '/login';
+
+        async function loadWarehouseStock() {
+            const data = await apiGet('/analytics/warehouse-stock');
+
+            if (!data || !data.length) {
+                showEmpty('warehouseTable', 'No warehouses found');
+                return;
+            }
+
+            const totalValue = data.reduce((s, d) => s + Number(d.totalValue), 0);
+            const totalUnits = data.reduce((s, d) => s + d.totalQuantity, 0);
+
+            document.getElementById('warehouseCount').textContent = data.length;
+            document.getElementById('totalValue').textContent = formatCurrency(totalValue);
+            document.getElementById('totalUnits').textContent = formatNumber(totalUnits);
+
+            renderQuantityChart(data);
+            renderValueChart(data);
+            renderTable(data);
+        }
+
+        function renderQuantityChart(data) {
+            new Chart(document.getElementById('quantityChart'), {
+                type: 'bar',
+                data: {
+                    labels: data.map(d => d.warehouseName),
+                    datasets: [{
+                        label: 'Quantity',
+                        data: data.map(d => d.totalQuantity),
+                        backgroundColor: ['#3b82f6', '#22c55e', '#f97316', '#8b5cf6', '#ef4444', '#06b6d4']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true }, x: { grid: { display: false } } }
+                }
+            });
+        }
+
+        function renderValueChart(data) {
+            new Chart(document.getElementById('valueChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: data.map(d => d.warehouseName),
+                    datasets: [{
+                        data: data.map(d => d.totalValue),
+                        backgroundColor: ['#3b82f6', '#22c55e', '#f97316', '#8b5cf6', '#ef4444', '#06b6d4']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'right' } }
+                }
+            });
+        }
+
+        function renderTable(data) {
+            let html = '<table><thead><tr><th>Warehouse</th><th>Location</th><th>SKUs</th><th>Total Qty</th><th>Total Value</th><th>Avg Value/SKU</th></tr></thead><tbody>';
+            data.forEach(r => {
+                const avg = r.totalSKU > 0 ? r.totalValue / r.totalSKU : 0;
+                html += '<tr><td><strong>' + r.warehouseName + '</strong></td><td>' + (r.location || '-') + '</td><td>' + r.totalSKU + '</td><td>' + formatNumber(r.totalQuantity) + '</td><td>' + formatCurrency(r.totalValue) + '</td><td>' + formatCurrency(avg) + '</td></tr>';
+            });
+            html += '</tbody></table>';
+            document.getElementById('warehouseTable').innerHTML = html;
+        }
+
+        loadWarehouseStock();
+    </script>
+</body>
+</html>

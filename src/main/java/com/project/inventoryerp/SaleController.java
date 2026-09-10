@@ -1,10 +1,11 @@
 package com.project.inventoryerp;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
-import java.util.List;
-import java.util.stream.Collectors;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/sales")
@@ -19,7 +20,7 @@ public class SaleController {
 
     @PostMapping
     @Transactional
-    public Sale createSale(@RequestBody SaleRequest request) {
+    public Sale createSale(@Valid @RequestBody SaleRequest request) {
         Business business = currentUserService.getCurrentBusiness();
 
         Customer customer = customerRepository.findById(request.getCustomerId())
@@ -46,10 +47,8 @@ public class SaleController {
     }
 
     @GetMapping
-    public List<Sale> getAllSales() {
+    public Page<Sale> getAllSales(Pageable pageable) {
         Long businessId = currentUserService.getCurrentBusiness().getId();
-        return saleRepository.findAll().stream()
-                .filter(s -> s.getBusiness() != null && s.getBusiness().getId().equals(businessId))
-                .collect(Collectors.toList());
+        return saleRepository.findAllByBusinessId(businessId, pageable);
     }
 }

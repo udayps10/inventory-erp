@@ -3,6 +3,7 @@ package com.project.inventoryerp;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -19,7 +20,7 @@ public class AuthController {
     private EmailService emailService;
 
     @PostMapping("/register")
-    public String register(@RequestBody AuthRequest request) {
+    public String register(@Valid @RequestBody AuthRequest request) {
         Business business = new Business();
         business.setName(request.getBusinessName());
         Business savedBusiness = businessRepository.save(business);
@@ -36,7 +37,7 @@ public class AuthController {
 
         return "User registered successfully";
     }@PostMapping("/login")
-    public String login(@RequestBody AuthRequest request) {
+    public String login(@Valid @RequestBody AuthRequest request) {
         User user = userRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new RuntimeException("Invalid username or password"));
 

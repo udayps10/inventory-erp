@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Inventory ERP</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+</head>
+<body>
+    <div th:replace="~{fragments/sidebar}"></div>
+
+    <div class="main">
+        <div class="topbar">
+            <h1>Dashboard</h1>
+            <div class="topbar-right">
+                <span class="date" id="currentDate"></span>
+                <button class="btn btn-outline" onclick="logout()">Logout</button>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="stats-grid" id="statsCards">
+                <div class="stat-card blue">
+                    <div class="label">Total Stock Value</div>
+                    <div class="value" id="totalValue">-</div>
+                    <div class="sub" id="totalSKUs">-</div>
+                </div>
+                <div class="stat-card green">
+                    <div class="label">Total Sales</div>
+                    <div class="value" id="totalSales">-</div>
+                    <div class="sub" id="totalQtySold">-</div>
+                </div>
+                <div class="stat-card purple">
+                    <div class="label">Total Purchases</div>
+                    <div class="value" id="totalPurchases">-</div>
+                    <div class="sub">All time</div>
+                </div>
+                <div class="stat-card red">
+                    <div class="label">Low Stock Items</div>
+                    <div class="value" id="lowStockCount">-</div>
+                    <div class="sub" id="lowStockThresh">Below threshold</div>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Sales Trend (Last 30 Days)</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="salesChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Warehouse Stock Distribution</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="warehouseChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3>Low Stock Alerts</h3>
+                    <a href="/stock" class="btn btn-outline" style="font-size:12px">View All</a>
+                </div>
+                <div class="card-body">
+                    <div class="table-container" id="lowStockTable">
+                        <div class="loading"><div class="spinner"></div>Loading...</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3>Top Slow Movers</h3>
+                    <a href="/analytics/velocity" class="btn btn-outline" style="font-size:12px">View All</a>
+                </div>
+                <div class="card-body">
+                    <div class="table-container" id="slowMoversTable">
+                        <div class="loading"><div class="spinner"></div>Loading...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/app.js"></script>
+    <script>
+        document.getElementById('currentDate').textContent = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+        if (!isLoggedIn()) window.location.href = '/login';
+
+        async function loadDashboard() {
+            const [stockValue, sales, purchases, lowStock, velocity, warehouse, trend] = await Promise.all([
+                apiGet('/reports/total-stock-value'),
+                apiGet('/reports/total-sales'),
+                apiGet('/reports/total-purchases'),
+                apiGet('/reports/low-stock?threshold=10'),
+                apiGet('/analytics/velocity?days=30'),
+                apiGet('/analytics/warehouse-stock'),
+                apiGet('/analytics/sales-trend?period=daily&days=30')
+            ]);
+
+            if (stockValue) {
+                document.getElementById('totalValue').textContent = formatCurrency(stockValue.totalStockValue);
+                document.getElementById('totalSKUs').textContent = stockValue.totalSKUs + ' SKUs';
+            }
+            if (sales) {
+                document.getElementById('totalSales').textContent = formatCurrency(sales.totalSales);
+                document.getElementById('totalQtySold').textContent = formatNumber(sales.totalQuantitySold) + ' units sold';
+            }
+            if (purchases) {
+                document.getElementById('totalPurchases').textContent = formatCurrency(purchases.totalPurchases);
+            }
+            if (lowStock) {
+                document.getElementById('lowStockCount').textContent = lowStock.length;
+                document.getElementById('lowStockThresh').textContent = 'Below 10 units';
+                renderLowStock(lowStock.slice(0, 5));
+            }
+            if (velocity) {
+                renderSlowMovers(velocity.filter(v => v.velocityRank === 'SLOW' || v.velocityRank === 'DEAD').slice(0, 5));
+            }
+            if (warehouse && warehouse.length > 0) {
+                renderWarehouseChart(warehouse);
+            }
+            if (trend && trend.length > 0) {
+                renderSalesChart(trend);
+            }
+        }
+
+        function renderLowStock(data) {
+            if (!data.length) {
+                showEmpty('lowStockTable', 'No low stock items');
+                return;
+            }
+            let html = '<table><thead><tr><th>Product</th><th>SKU</th><th>Warehouse</th><th>Stock</th><th>Status</th></tr></thead><tbody>';
+            data.forEach(r => {
+                html += '<tr><td>' + r.productName + '</td><td>' + r.sku + '</td><td>' + r.warehouseName + '</td><td>' + r.currentQuantity + '</td><td><span class="badge badge-red">Low</span></td></tr>';
+            });
+            html += '</tbody></table>';
+            document.getElementById('lowStockTable').innerHTML = html;
+        }
+
+        function renderSlowMovers(data) {
+            if (!data.length) {
+                showEmpty('slowMoversTable', 'No slow moving items');
+                return;
+            }
+            let html = '<table><thead><tr><th>Product</th><th>SKU</th><th>Stock</th><th>Avg Daily</th><th>Revenue</th><th>Rank</th></tr></thead><tbody>';
+            data.forEach(r => {
+                html += '<tr><td>' + r.productName + '</td><td>' + r.sku + '</td><td>' + r.currentStock + '</td><td>' + r.avgDailySales + '</td><td>' + formatCurrency(r.totalRevenue) + '</td><td>' + getVelocityBadge(r.velocityRank) + '</td></tr>';
+            });
+            html += '</tbody></table>';
+            document.getElementById('slowMoversTable').innerHTML = html;
+        }
+
+        function renderSalesChart(data) {
+            new Chart(document.getElementById('salesChart'), {
+                type: 'line',
+                data: {
+                    labels: data.map(d => d.date.substring(5)),
+                    datasets: [{
+                        label: 'Sales',
+                        data: data.map(d => d.totalSales),
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59,130,246,0.08)',
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { callback: v => '₹' + (v/1000).toFixed(0) + 'k' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        function renderWarehouseChart(data) {
+            new Chart(document.getElementById('warehouseChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: data.map(d => d.warehouseName),
+                    datasets: [{
+                        data: data.map(d => d.totalValue),
+                        backgroundColor: ['#3b82f6', '#22c55e', '#f97316', '#8b5cf6', '#ef4444', '#06b6d4']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'right' } }
+                }
+            });
+        }
+
+        function logout() {
+            clearToken();
+            window.location.href = '/login';
+        }
+
+        loadDashboard();
+    </script>
+</body>
+</html>

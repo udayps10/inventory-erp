@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Velocity - Inventory ERP</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+</head>
+<body>
+    <div th:replace="~{fragments/sidebar}"></div>
+
+    <div class="main">
+        <div class="topbar">
+            <h1>Stock Velocity</h1>
+            <div class="topbar-right">
+                <select class="form-control" id="daysSelect" style="width:auto">
+                    <option value="7">Last 7 days</option>
+                    <option value="30" selected>Last 30 days</option>
+                    <option value="90">Last 90 days</option>
+                </select>
+                <button class="btn btn-outline" onclick="logout()">Logout</button>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="stats-grid">
+                <div class="stat-card green">
+                    <div class="label">Fast Movers</div>
+                    <div class="value" id="fastCount">-</div>
+                </div>
+                <div class="stat-card blue">
+                    <div class="label">Medium Movers</div>
+                    <div class="value" id="mediumCount">-</div>
+                </div>
+                <div class="stat-card orange">
+                    <div class="label">Slow Movers</div>
+                    <div class="value" id="slowCount">-</div>
+                </div>
+                <div class="stat-card red">
+                    <div class="label">Dead Stock</div>
+                    <div class="value" id="deadCount">-</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header"><h3>Velocity Distribution</h3></div>
+                <div class="card-body">
+                    <div class="chart-container"><canvas id="velocityChart"></canvas></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header"><h3>All Products</h3></div>
+                <div class="card-body">
+                    <div class="table-container" id="velocityTable">
+                        <div class="loading"><div class="spinner"></div>Loading...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/app.js"></script>
+    <script>
+        if (!isLoggedIn()) window.location.href = '/login';
+
+        async function loadVelocity() {
+            const days = document.getElementById('daysSelect').value;
+            const data = await apiGet('/analytics/velocity?days=' + days);
+
+            if (!data || !data.length) {
+                showEmpty('velocityTable', 'No products found');
+                return;
+            }
+
+            const fast = data.filter(d => d.velocityRank === 'FAST').length;
+            const medium = data.filter(d => d.velocityRank === 'MEDIUM').length;
+            const slow = data.filter(d => d.velocityRank === 'SLOW').length;
+            const dead = data.filter(d => d.velocityRank === 'DEAD').length;
+
+            document.getElementById('fastCount').textContent = fast;
+            document.getElementById('mediumCount').textContent = medium;
+            document.getElementById('slowCount').textContent = slow;
+            document.getElementById('deadCount').textContent = dead;
+
+            renderChart(fast, medium, slow, dead);
+            renderTable(data);
+        }
+
+        function renderChart(fast, medium, slow, dead) {
+            new Chart(document.getElementById('velocityChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Fast', 'Medium', 'Slow', 'Dead'],
+                    datasets: [{
+                        data: [fast, medium, slow, dead],
+                        backgroundColor: ['#22c55e', '#3b82f6', '#f97316', '#ef4444']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'right' } }
+                }
+            });
+        }
+
+        function renderTable(data) {
+            let html = '<table><thead><tr><th>Product</th><th>SKU</th><th>Stock</th><th>Sold</th><th>Avg/Day</th><th>Days of Stock</th><th>Revenue</th><th>Rank</th></tr></thead><tbody>';
+            data.forEach(r => {
+                const daysOfStock = r.daysOfStock != null ? r.daysOfStock + ' days' : '-';
+                html += '<tr><td>' + r.productName + '</td><td>' + r.sku + '</td><td>' + r.currentStock + '</td><td>' + r.totalSold + '</td><td>' + r.avgDailySales + '</td><td>' + daysOfStock + '</td><td>' + formatCurrency(r.totalRevenue) + '</td><td>' + getVelocityBadge(r.velocityRank) + '</td></tr>';
+            });
+            html += '</tbody></table>';
+            document.getElementById('velocityTable').innerHTML = html;
+        }
+
+        document.getElementById('daysSelect').addEventListener('change', loadVelocity);
+        loadVelocity();
+    </script>
+</body>
+</html>

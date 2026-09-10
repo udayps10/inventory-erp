@@ -1,9 +1,10 @@
 package com.project.inventoryerp;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
-import java.util.List;
-import java.util.stream.Collectors;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/inventory")
@@ -15,7 +16,7 @@ public class InventoryController {
     @Autowired private CurrentUserService currentUserService;
 
     @PostMapping
-    public Inventory createInventory(@RequestBody InventoryRequest request) {
+    public Inventory createInventory(@Valid @RequestBody InventoryRequest request) {
         Business business = currentUserService.getCurrentBusiness();
         Product product = productRepository.findById(request.getProductId())
                 .filter(p -> p.getBusiness() != null && p.getBusiness().getId().equals(business.getId()))
@@ -32,11 +33,8 @@ public class InventoryController {
     }
 
     @GetMapping
-    public List<Inventory> getAllInventory() {
+    public Page<Inventory> getAllInventory(Pageable pageable) {
         Long businessId = currentUserService.getCurrentBusiness().getId();
-        return inventoryRepository.findAll().stream()
-                .filter(i -> i.getProduct() != null && i.getProduct().getBusiness() != null
-                        && i.getProduct().getBusiness().getId().equals(businessId))
-                .collect(Collectors.toList());
+        return inventoryRepository.findAllByBusinessId(businessId, pageable);
     }
 }

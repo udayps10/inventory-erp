@@ -1,10 +1,20 @@
 package com.project.inventoryerp;
 
+import jakarta.validation.constraints.*;
+
 public class MovementRequest {
+    @NotNull(message = "Product ID is required")
     private Long productId;
+
+    @NotNull(message = "Warehouse ID is required")
     private Long warehouseId;
+
+    @NotNull(message = "Quantity change is required")
     private Integer quantityChange;
+
+    @NotBlank(message = "Reason is required")
     private String reason;
+
     private String referenceId;
 
     public Long getProductId() { return productId; }

@@ -1,9 +1,10 @@
 package com.project.inventoryerp;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
-import java.util.List;
-import java.util.stream.Collectors;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/stock-movements")
@@ -16,7 +17,7 @@ public class StockMovementController {
     @Autowired private CurrentUserService currentUserService;
 
     @PostMapping
-    public StockMovement createMovement(@RequestBody MovementRequest request) {
+    public StockMovement createMovement(@Valid @RequestBody MovementRequest request) {
         Business business = currentUserService.getCurrentBusiness();
         Product product = productRepository.findById(request.getProductId())
                 .filter(p -> p.getBusiness() != null && p.getBusiness().getId().equals(business.getId()))
@@ -29,11 +30,8 @@ public class StockMovementController {
     }
 
     @GetMapping
-    public List<StockMovement> getAllMovements() {
+    public Page<StockMovement> getAllMovements(Pageable pageable) {
         Long businessId = currentUserService.getCurrentBusiness().getId();
-        return stockMovementRepository.findAll().stream()
-                .filter(m -> m.getProduct() != null && m.getProduct().getBusiness() != null
-                        && m.getProduct().getBusiness().getId().equals(businessId))
-                .collect(Collectors.toList());
+        return stockMovementRepository.findAllByBusinessId(businessId, pageable);
     }
 }
