@@ -28,7 +28,7 @@
         </div>
     </div>
 
-    <div class="modal-overlay" id="modal" style="display:none" onclick="closeModal(event)">
+    <div class="modal-overlay" id="modalOverlay" style="display:none" onclick="closeModal()">
         <div class="modal" onclick="event.stopPropagation()">
             <div class="modal-header">
                 <h3 id="modalTitle">Add Product</h3>
@@ -69,6 +69,7 @@
         let products = [];
 
         async function loadProducts() {
+            showLoading('productTable');
             const data = await apiGet('/products?size=100');
             products = data ? data.content || [] : [];
             renderTable();
@@ -78,14 +79,14 @@
             if (!products.length) { showEmpty('productTable', 'No products found. Add your first product.'); return; }
             let html = '<table><thead><tr><th>Name</th><th>SKU</th><th>Price</th><th>Brand</th><th>Unit</th><th>GST%</th><th>Actions</th></tr></thead><tbody>';
             products.forEach(p => {
-                html += '<tr><td>' + p.name + '</td><td>' + p.sku + '</td><td>' + formatCurrency(p.price) + '</td><td>' + (p.brand||'-') + '</td><td>' + (p.unit||'-') + '</td><td>' + (p.gstPercent||'-') + '%</td><td><button class="btn btn-outline" style="font-size:11px;padding:4px 10px" onclick="editProduct(' + p.id + ')">Edit</button> <button class="btn btn-outline" style="font-size:11px;padding:4px 10px;color:#ef4444" onclick="deleteProduct(' + p.id + ')">Delete</button></td></tr>';
+                html += '<tr><td>'+p.name+'</td><td>'+p.sku+'</td><td>'+formatCurrency(p.price)+'</td><td>'+(p.brand||'-')+'</td><td>'+(p.unit||'-')+'</td><td>'+(p.gstPercent!=null?p.gstPercent+'%':'-')+'</td><td><button class="btn btn-outline" style="font-size:11px;padding:4px 10px" onclick="editProduct('+p.id+')">Edit</button> <button class="btn btn-outline" style="font-size:11px;padding:4px 10px;color:#ef4444" onclick="deleteProduct('+p.id+')">Del</button></td></tr>';
             });
             html += '</tbody></table>';
             document.getElementById('productTable').innerHTML = html;
         }
 
         function openModal(product) {
-            document.getElementById('modal').style.display = 'flex';
+            document.getElementById('modalOverlay').style.display = 'flex';
             if (product) {
                 document.getElementById('modalTitle').textContent = 'Edit Product';
                 document.getElementById('editId').value = product.id;
@@ -95,7 +96,7 @@
                 document.getElementById('brand').value = product.brand || '';
                 document.getElementById('unit').value = product.unit || '';
                 document.getElementById('barcode').value = product.barcode || '';
-                document.getElementById('gstPercent').value = product.gstPercent || '';
+                document.getElementById('gstPercent').value = product.gstPercent != null ? product.gstPercent : '';
                 document.getElementById('hsnCode').value = product.hsnCode || '';
                 document.getElementById('categoryId').value = product.category ? product.category.id : '';
             } else {
@@ -105,9 +106,8 @@
             }
         }
 
-        function closeModal(e) {
-            if (e && e.target !== document.getElementById('modal')) return;
-            document.getElementById('modal').style.display = 'none';
+        function closeModal() {
+            document.getElementById('modalOverlay').style.display = 'none';
         }
 
         async function saveProduct(e) {
@@ -125,11 +125,7 @@
             };
             const editId = document.getElementById('editId').value;
             if (editId) {
-                await fetch('/api/products/' + editId, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() },
-                    body: JSON.stringify(body)
-                });
+                await apiPut('/products/' + editId, body);
             } else {
                 await apiPost('/products', body);
             }
@@ -144,10 +140,7 @@
 
         async function deleteProduct(id) {
             if (!confirm('Delete this product?')) return;
-            await fetch('/api/products/' + id, {
-                method: 'DELETE',
-                headers: { 'Authorization': 'Bearer ' + getToken() }
-            });
+            await apiDelete('/products/' + id);
             loadProducts();
         }
 

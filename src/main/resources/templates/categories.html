@@ -25,7 +25,7 @@
             </div>
         </div>
     </div>
-    <div class="modal-overlay" id="modal" style="display:none" onclick="closeModal(event)">
+    <div class="modal-overlay" id="modalOverlay" style="display:none" onclick="closeModal()">
         <div class="modal" onclick="event.stopPropagation()">
             <div class="modal-header"><h3 id="modalTitle">Add Category</h3><button class="btn-close" onclick="closeModal()">&times;</button></div>
             <form id="form" onsubmit="save(event)">
@@ -40,7 +40,7 @@
     <script>
         if (!isLoggedIn()) window.location.href = '/login';
         let items = [];
-        async function load() { const d = await apiGet('/categories?size=100'); items = d ? d.content || [] : []; render(); }
+        async function load() { showLoading('table'); const d = await apiGet('/categories?size=100'); items = d ? d.content || [] : []; render(); }
         function render() {
             if (!items.length) { showEmpty('table', 'No categories found.'); return; }
             let h = '<table><thead><tr><th>Name</th><th>Actions</th></tr></thead><tbody>';
@@ -48,21 +48,21 @@
             h += '</tbody></table>'; document.getElementById('table').innerHTML = h;
         }
         function openModal(item) {
-            document.getElementById('modal').style.display = 'flex';
+            document.getElementById('modalOverlay').style.display = 'flex';
             if (item) { document.getElementById('modalTitle').textContent = 'Edit Category'; document.getElementById('editId').value = item.id; document.getElementById('name').value = item.name||''; }
             else { document.getElementById('modalTitle').textContent = 'Add Category'; document.getElementById('editId').value = ''; document.getElementById('form').reset(); }
         }
-        function closeModal(e) { if (e && e.target !== document.getElementById('modal')) return; document.getElementById('modal').style.display = 'none'; }
+        function closeModal() { document.getElementById('modalOverlay').style.display = 'none'; }
         async function save(e) {
             e.preventDefault();
             const body = { name: document.getElementById('name').value };
             const id = document.getElementById('editId').value;
-            if (id) { await fetch('/api/categories/'+id, { method:'PUT', headers:{'Content-Type':'application/json','Authorization':'Bearer '+getToken()}, body:JSON.stringify(body) }); }
+            if (id) { await apiPut('/categories/'+id, body); }
             else { await apiPost('/categories', body); }
             closeModal(); load();
         }
         function edit(id) { const i = items.find(x => x.id === id); if (i) openModal(i); }
-        async function del(id) { if (!confirm('Delete?')) return; await fetch('/api/categories/'+id, { method:'DELETE', headers:{'Authorization':'Bearer '+getToken()} }); load(); }
+        async function del(id) { if (!confirm('Delete?')) return; await apiDelete('/categories/'+id); load(); }
         load();
     </script>
 </body>

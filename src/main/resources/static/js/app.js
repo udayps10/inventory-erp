@@ -16,28 +16,82 @@ function isLoggedIn() {
     return !!getToken();
 }
 
+function logout() {
+    clearToken();
+    window.location.href = '/login';
+}
+
 async function apiGet(path) {
-    const res = await fetch(API_BASE + path, {
-        headers: { 'Authorization': 'Bearer ' + getToken() }
-    });
-    if (res.status === 401 || res.status === 403) {
-        clearToken();
-        window.location.href = '/login';
+    try {
+        const res = await fetch(API_BASE + path, {
+            headers: { 'Authorization': 'Bearer ' + getToken() }
+        });
+        if (res.status === 401 || res.status === 403) {
+            clearToken();
+            window.location.href = '/login';
+            return null;
+        }
+        if (!res.ok) return null;
+        return await res.json();
+    } catch (e) {
         return null;
     }
-    return res.json();
 }
 
 async function apiPost(path, body) {
-    const res = await fetch(API_BASE + path, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + getToken()
-        },
-        body: JSON.stringify(body)
-    });
-    return res.json();
+    try {
+        const res = await fetch(API_BASE + path, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + getToken()
+            },
+            body: JSON.stringify(body)
+        });
+        if (!res.ok) {
+            const err = await res.json();
+            alert(err.error || 'Request failed');
+            return null;
+        }
+        return await res.json();
+    } catch (e) {
+        alert('Connection failed');
+        return null;
+    }
+}
+
+async function apiPut(path, body) {
+    try {
+        const res = await fetch(API_BASE + path, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + getToken()
+            },
+            body: JSON.stringify(body)
+        });
+        if (!res.ok) {
+            const err = await res.json();
+            alert(err.error || 'Request failed');
+            return null;
+        }
+        return await res.json();
+    } catch (e) {
+        alert('Connection failed');
+        return null;
+    }
+}
+
+async function apiDelete(path) {
+    try {
+        const res = await fetch(API_BASE + path, {
+            method: 'DELETE',
+            headers: { 'Authorization': 'Bearer ' + getToken() }
+        });
+        return res.ok;
+    } catch (e) {
+        return false;
+    }
 }
 
 function formatCurrency(val) {

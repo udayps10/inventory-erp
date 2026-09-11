@@ -25,7 +25,7 @@
             </div>
         </div>
     </div>
-    <div class="modal-overlay" id="modal" style="display:none" onclick="closeModal(event)">
+    <div class="modal-overlay" id="modalOverlay" style="display:none" onclick="closeModal()">
         <div class="modal" onclick="event.stopPropagation()">
             <div class="modal-header"><h3>New Sale</h3><button class="btn-close" onclick="closeModal()">&times;</button></div>
             <form id="form" onsubmit="save(event)">
@@ -43,15 +43,15 @@
     <script>
         if (!isLoggedIn()) window.location.href = '/login';
         let items = [];
-        async function load() { const d = await apiGet('/sales?size=50'); items = d ? d.content || [] : []; render(); }
+        async function load() { showLoading('table'); const d = await apiGet('/sales?size=50'); items = d ? d.content || [] : []; render(); }
         function render() {
             if (!items.length) { showEmpty('table', 'No sales found.'); return; }
             let h = '<table><thead><tr><th>ID</th><th>Product</th><th>Customer</th><th>Qty</th><th>Price</th><th>Date</th></tr></thead><tbody>';
             items.forEach(i => { h += '<tr><td>'+i.id+'</td><td>'+(i.product?i.product.name:'-')+'</td><td>'+(i.customer?i.customer.name:'-')+'</td><td>'+i.quantity+'</td><td>'+formatCurrency(i.price)+'</td><td>'+formatDate(i.saleDate)+'</td></tr>'; });
             h += '</tbody></table>'; document.getElementById('table').innerHTML = h;
         }
-        function openModal() { document.getElementById('modal').style.display = 'flex'; document.getElementById('form').reset(); }
-        function closeModal(e) { if (e && e.target !== document.getElementById('modal')) return; document.getElementById('modal').style.display = 'none'; }
+        function openModal() { document.getElementById('modalOverlay').style.display = 'flex'; document.getElementById('form').reset(); }
+        function closeModal() { document.getElementById('modalOverlay').style.display = 'none'; }
         async function save(e) {
             e.preventDefault();
             const body = { customerId: parseInt(document.getElementById('customerId').value), productId: parseInt(document.getElementById('productId').value), warehouseId: parseInt(document.getElementById('warehouseId').value), quantity: parseInt(document.getElementById('quantity').value), price: parseFloat(document.getElementById('price').value) };
