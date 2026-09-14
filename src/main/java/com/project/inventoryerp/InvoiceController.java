@@ -59,7 +59,7 @@ public class InvoiceController {
             BigDecimal taxableAmount = itemReq.getPrice().multiply(BigDecimal.valueOf(itemReq.getQuantity()));
             item.setTaxableAmount(taxableAmount);
 
-            BigDecimal gstPercent = product.getGstPercent() != null ? product.getGstPercent() : BigDecimal.ZERO;
+            BigDecimal gstPercent = BigDecimal.ZERO;
             item.setGstPercent(gstPercent);
 
             BigDecimal halfGst = gstPercent.divide(BigDecimal.valueOf(2));

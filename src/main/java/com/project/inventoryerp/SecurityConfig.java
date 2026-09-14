@@ -31,12 +31,11 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/", "/login", "/register", "/dashboard", "/products", "/customers", "/suppliers", "/warehouses", "/categories", "/purchases", "/sales", "/stock", "/analytics/**", "/reorder", "/dead-stock", "/warehouse-stock").permitAll()
-                .requestMatchers("/css/**", "/js/**", "/images/**").permitAll()
+                .requestMatchers("/", "/login", "/register", "/dashboard", "/products", "/warehouses", "/stock", "/sales", "/reports").permitAll()
+                .requestMatchers("/css/**", "/js/**").permitAll()
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
-
         return http.build();
     }
 }

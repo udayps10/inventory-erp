@@ -74,7 +74,6 @@ public class ReportController {
             item.put("inventoryId", inv.getId());
             item.put("productId", inv.getProduct().getId());
             item.put("productName", inv.getProduct().getName());
-            item.put("sku", inv.getProduct().getSku());
             item.put("warehouseId", inv.getWarehouse().getId());
             item.put("warehouseName", inv.getWarehouse().getName());
             item.put("currentQuantity", inv.getQuantity());

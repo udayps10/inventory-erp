@@ -44,13 +44,9 @@ public class ProductController {
                 .filter(p -> p.getBusiness() != null && p.getBusiness().getId().equals(business.getId()))
                 .map(product -> {
                     product.setName(updatedProduct.getName());
-                    product.setSku(updatedProduct.getSku());
                     product.setPrice(updatedProduct.getPrice());
                     product.setBrand(updatedProduct.getBrand());
                     product.setUnit(updatedProduct.getUnit());
-                    product.setBarcode(updatedProduct.getBarcode());
-                    product.setGstPercent(updatedProduct.getGstPercent());
-                    product.setHsnCode(updatedProduct.getHsnCode());
                     return ResponseEntity.ok(productRepository.save(product));
                 })
                 .orElse(ResponseEntity.notFound().build());
@@ -67,14 +63,5 @@ public class ProductController {
         }
         productRepository.deleteById(id);
         return ResponseEntity.noContent().build();
-    }
-
-    @GetMapping("/barcode/{code}")
-    public ResponseEntity<Product> getProductByBarcode(@PathVariable String code) {
-        Business business = currentUserService.getCurrentBusiness();
-        return productRepository.findByBarcode(code)
-                .filter(p -> p.getBusiness() != null && p.getBusiness().getId().equals(business.getId()))
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
     }
 }

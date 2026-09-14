@@ -64,7 +64,6 @@ public class AnalyticsController {
             Map<String, Object> item = new LinkedHashMap<>();
             item.put("productId", product.getId());
             item.put("productName", product.getName());
-            item.put("sku", product.getSku());
             item.put("currentStock", currentStock);
             item.put("totalSold", totalSold);
             item.put("totalRevenue", totalRevenue);
@@ -112,7 +111,6 @@ public class AnalyticsController {
                 Map<String, Object> item = new LinkedHashMap<>();
                 item.put("productId", product.getId());
                 item.put("productName", product.getName());
-                item.put("sku", product.getSku());
                 item.put("revenue", entry.getValue());
                 item.put("percentOfTotal", totalRevenue.compareTo(BigDecimal.ZERO) > 0
                         ? entry.getValue().multiply(new BigDecimal("100")).divide(totalRevenue, 2, RoundingMode.HALF_UP)
@@ -180,7 +178,6 @@ public class AnalyticsController {
                     Map<String, Object> item = new LinkedHashMap<>();
                     item.put("productId", product.getId());
                     item.put("productName", product.getName());
-                    item.put("sku", product.getSku());
                     item.put("currentStock", currentStock);
                     item.put("unitPrice", product.getPrice());
                     item.put("stockValue", stockValue);
@@ -229,7 +226,6 @@ public class AnalyticsController {
                 Map<String, Object> item = new LinkedHashMap<>();
                 item.put("productId", product.getId());
                 item.put("productName", product.getName());
-                item.put("sku", product.getSku());
                 item.put("currentStock", currentStock);
                 item.put("avgDailySales", avgDailySales);
                 item.put("reorderPoint", reorderPoint);

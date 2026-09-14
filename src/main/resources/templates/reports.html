@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports</title><link rel="stylesheet" href="/css/style.css">
+</head><body>
+    <div th:replace="~{fragments/sidebar}"></div>
+    <div class="main">
+        <div class="topbar"><h1>Reports & Analytics</h1>
+            <div><select id="days" onchange="load()" style="padding:6px;border:1px solid #ddd;border-radius:6px;font-size:13px"><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="90">Last 90 days</option></select> <button class="logout-btn" onclick="logout()">Logout</button></div>
+        </div>
+        <div class="content">
+            <div class="stats-grid">
+                <div class="stat-card"><div class="label">Total Products</div><div class="value" id="totalProducts">-</div></div>
+                <div class="stat-card"><div class="label">Total Stock</div><div class="value" id="totalStock">-</div></div>
+                <div class="stat-card"><div class="label">Stock Value</div><div class="value" id="stockValue">-</div></div>
+                <div class="stat-card"><div class="label">Total Sales</div><div class="value" id="totalSales">-</div></div>
+                <div class="stat-card"><div class="label">Total Purchases</div><div class="value" id="totalPurchases">-</div></div>
+                <div class="stat-card"><div class="label">Low Stock Items</div><div class="value" id="lowStock">-</div></div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+                <div class="card"><div class="card-header"><h3>Fast Moving Products</h3></div>
+                    <div class="card-body" id="fastMovers"><div class="loading">Loading...</div></div>
+                </div>
+                <div class="card"><div class="card-header"><h3>Slow Moving Products</h3></div>
+                    <div class="card-body" id="slowMovers"><div class="loading">Loading...</div></div>
+                </div>
+            </div>
+
+            <div class="card"><div class="card-header"><h3>Low Stock Alerts</h3></div>
+                <div class="card-body" id="lowStockTable"><div class="loading">Loading...</div></div>
+            </div>
+
+            <div class="card"><div class="card-header"><h3>Sales Trend</h3></div>
+                <div class="card-body" id="salesTrend"><div class="loading">Loading...</div></div>
+            </div>
+        </div>
+    </div>
+    <script src="/js/app.js"></script>
+    <script>
+        if (!isLoggedIn()) window.location.href = '/login';
+        async function load() {
+            const days = document.getElementById('days').value;
+            const [p, sv, ts, tp, ls, vel, trend] = await Promise.all([
+                apiGet('/reports/product-count'),
+                apiGet('/reports/total-stock-value'),
+                apiGet('/reports/total-sales?startDate=2024-01-01&endDate=2099-12-31'),
+                apiGet('/reports/total-purchases?startDate=2024-01-01&endDate=2099-12-31'),
+                apiGet('/reports/low-stock?threshold=10'),
+                apiGet('/analytics/velocity?days=' + days),
+                apiGet('/analytics/sales-trend?period=daily&days=' + days)
+            ]);
+
+            if (p) document.getElementById('totalProducts').textContent = p.totalProducts || 0;
+            if (sv) { document.getElementById('totalStock').textContent = sv.totalStockItems || 0; document.getElementById('stockValue').textContent = formatCurrency(sv.totalStockValue); }
+            if (ts) document.getElementById('totalSales').textContent = formatCurrency(ts.totalSales);
+            if (tp) document.getElementById('totalPurchases').textContent = formatCurrency(tp.totalPurchases);
+            if (ls) document.getElementById('lowStock').textContent = ls.length;
+
+            if (ls && ls.length) {
+                let h = '<table><tr><th>Product</th><th>Warehouse</th><th>Stock</th></tr>';
+                ls.forEach(r => h += '<tr><td>' + r.productName + '</td><td>' + r.warehouseName + '</td><td><span class="badge badge-red">' + r.currentQuantity + '</span></td></tr>');
+                document.getElementById('lowStockTable').innerHTML = h + '</table>';
+            } else { document.getElementById('lowStockTable').innerHTML = '<div class="empty">All stock levels OK</div>'; }
+
+            if (vel && vel.length) {
+                const fast = vel.filter(v => v.velocityRank === 'FAST' || v.velocityRank === 'MEDIUM');
+                const slow = vel.filter(v => v.velocityRank === 'SLOW' || v.velocityRank === 'DEAD');
+                if (fast.length) { let h = '<table><tr><th>Product</th><th>Sold</th><th>Rank</th></tr>'; fast.forEach(v => { h += '<tr><td>' + v.productName + '</td><td>' + v.totalSold + '</td><td><span class="badge badge-green">' + v.velocityRank + '</span></td></tr>'; }); document.getElementById('fastMovers').innerHTML = h + '</table>'; }
+                else { document.getElementById('fastMovers').innerHTML = '<div class="empty">No fast movers</div>'; }
+                if (slow.length) { let h = '<table><tr><th>Product</th><th>Sold</th><th>Rank</th></tr>'; slow.forEach(v => { h += '<tr><td>' + v.productName + '</td><td>' + v.totalSold + '</td><td><span class="badge badge-orange">' + v.velocityRank + '</span></td></tr>'; }); document.getElementById('slowMovers').innerHTML = h + '</table>'; }
+                else { document.getElementById('slowMovers').innerHTML = '<div class="empty">No slow movers</div>'; }
+            } else {
+                document.getElementById('fastMovers').innerHTML = '<div class="empty">No data yet. Make some sales first.</div>';
+                document.getElementById('slowMovers').innerHTML = '<div class="empty">No data yet.</div>';
+            }
+
+            if (trend && trend.length) {
+                let h = '<table><tr><th>Date</th><th>Sales</th><th>Orders</th></tr>';
+                trend.forEach(t => h += '<tr><td>' + t.date + '</td><td>' + formatCurrency(t.totalSales) + '</td><td>' + t.totalOrders + '</td></tr>');
+                document.getElementById('salesTrend').innerHTML = h + '</table>';
+            } else { document.getElementById('salesTrend').innerHTML = '<div class="empty">No sales trend data yet.</div>'; }
+        }
+        load();
+    </script>
+</body></html>

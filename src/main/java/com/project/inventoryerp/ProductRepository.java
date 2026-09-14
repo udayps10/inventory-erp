@@ -9,10 +9,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface ProductRepository extends JpaRepository<Product, Long> {
-    Optional<Product> findByBarcode(String barcode);
-
-    Optional<Product> findByIdAndBusiness(Long id, Business business);
-
     @Query("SELECT p FROM Product p WHERE p.business.id = :businessId")
     List<Product> findAllByBusinessId(@Param("businessId") Long businessId);
 

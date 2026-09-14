@@ -52,7 +52,7 @@ class ProductControllerTest {
     void createProduct_shouldReturnProduct() throws Exception {
         Product product = new Product();
         product.setName("Widget");
-        product.setSku("W001");
+        
         product.setPrice(new java.math.BigDecimal("99.99"));
         product.setBrand("Acme");
         product.setUnit("pcs");
@@ -70,7 +70,7 @@ class ProductControllerTest {
     void getAllProducts_shouldReturnPage() throws Exception {
         Product product = new Product();
         product.setName("Gadget");
-        product.setSku("G001");
+        
         product.setPrice(new java.math.BigDecimal("49.99"));
 
         mockMvc.perform(post("/api/products")
@@ -88,7 +88,7 @@ class ProductControllerTest {
     void getProductById_shouldReturnProduct() throws Exception {
         Product product = new Product();
         product.setName("Item");
-        product.setSku("I001");
+        
         product.setPrice(new java.math.BigDecimal("25.00"));
 
         MvcResult result = mockMvc.perform(post("/api/products")
@@ -110,7 +110,7 @@ class ProductControllerTest {
     void updateProduct_shouldReturnUpdatedProduct() throws Exception {
         Product product = new Product();
         product.setName("Old Name");
-        product.setSku("U001");
+        
         product.setPrice(new java.math.BigDecimal("10.00"));
 
         MvcResult result = mockMvc.perform(post("/api/products")
@@ -124,7 +124,6 @@ class ProductControllerTest {
 
         Product updated = new Product();
         updated.setName("New Name");
-        updated.setSku("U001");
         updated.setPrice(new java.math.BigDecimal("20.00"));
 
         mockMvc.perform(put("/api/products/" + id)
@@ -139,7 +138,7 @@ class ProductControllerTest {
     void deleteProduct_shouldReturn204() throws Exception {
         Product product = new Product();
         product.setName("ToDelete");
-        product.setSku("D001");
+        
         product.setPrice(new java.math.BigDecimal("5.00"));
 
         MvcResult result = mockMvc.perform(post("/api/products")
@@ -167,7 +166,7 @@ class ProductControllerTest {
     void createProduct_withoutAuth_shouldReturn403() throws Exception {
         Product product = new Product();
         product.setName("NoAuth");
-        product.setSku("NA001");
+        
         product.setPrice(new java.math.BigDecimal("10.00"));
 
         mockMvc.perform(post("/api/products")

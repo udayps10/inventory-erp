@@ -38,7 +38,7 @@ class InventoryServiceTest {
         product = new Product();
         product.setId(1L);
         product.setName("Widget");
-        product.setSku("W001");
+        
         product.setBusiness(business);
 
         warehouse = new Warehouse();
