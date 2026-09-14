@@ -13,15 +13,17 @@ public class Sale {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "customer_id", nullable = false)
+    @JoinColumn(name = "customer_id")
     private Customer customer;
 
     @ManyToOne
-    @JoinColumn(name = "warehouse_id", nullable = false)
+    @JoinColumn(name = "warehouse_id")
     private Warehouse warehouse;
+
     @ManyToOne
     @JoinColumn(name = "business_id")
     private Business business;
+
     @ManyToOne
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
@@ -34,13 +36,9 @@ public class Sale {
 
     @Column(updatable = false)
     private LocalDateTime saleDate;
-    
 
     @PrePersist
-    protected void onCreate() {
-        saleDate = LocalDateTime.now();
-    }public Business getBusiness() { return business; }
-    public void setBusiness(Business business) { this.business = business; }
+    protected void onCreate() { saleDate = LocalDateTime.now(); }
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -48,6 +46,8 @@ public class Sale {
     public void setCustomer(Customer customer) { this.customer = customer; }
     public Warehouse getWarehouse() { return warehouse; }
     public void setWarehouse(Warehouse warehouse) { this.warehouse = warehouse; }
+    public Business getBusiness() { return business; }
+    public void setBusiness(Business business) { this.business = business; }
     public Product getProduct() { return product; }
     public void setProduct(Product product) { this.product = product; }
     public Integer getQuantity() { return quantity; }
