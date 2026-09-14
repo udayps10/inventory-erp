@@ -12,6 +12,9 @@ public class DashboardController {
     @GetMapping("/login")
     public String loginPage() { return "login"; }
 
+    @GetMapping("/register")
+    public String registerPage() { return "register"; }
+
     @GetMapping("/dashboard")
     public String dashboard() { return "dashboard"; }
 
