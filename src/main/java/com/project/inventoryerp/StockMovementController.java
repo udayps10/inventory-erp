@@ -22,9 +22,23 @@ public class StockMovementController {
         Product product = productRepository.findById(request.getProductId())
                 .filter(p -> p.getBusiness() != null && p.getBusiness().getId().equals(business.getId()))
                 .orElseThrow(() -> new RuntimeException("Product not found"));
-        Warehouse warehouse = warehouseRepository.findById(request.getWarehouseId())
-                .filter(w -> w.getBusiness() != null && w.getBusiness().getId().equals(business.getId()))
-                .orElseThrow(() -> new RuntimeException("Warehouse not found"));
+
+        Warehouse warehouse;
+        if (request.getWarehouseId() != null) {
+            warehouse = warehouseRepository.findById(request.getWarehouseId())
+                    .filter(w -> w.getBusiness() != null && w.getBusiness().getId().equals(business.getId()))
+                    .orElseThrow(() -> new RuntimeException("Warehouse not found"));
+        } else {
+            warehouse = warehouseRepository.findAll().stream()
+                    .filter(w -> w.getBusiness() != null && w.getBusiness().getId().equals(business.getId()))
+                    .findFirst()
+                    .orElseGet(() -> {
+                        Warehouse w = new Warehouse();
+                        w.setName("Main Store");
+                        w.setBusiness(business);
+                        return warehouseRepository.save(w);
+                    });
+        }
 
         return inventoryService.applyMovement(product, warehouse, request.getQuantityChange(), request.getReason(), request.getReferenceId());
     }

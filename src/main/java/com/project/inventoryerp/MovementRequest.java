@@ -3,10 +3,9 @@ package com.project.inventoryerp;
 import jakarta.validation.constraints.*;
 
 public class MovementRequest {
-    @NotNull(message = "Product ID is required")
+    @NotNull(message = "Product is required")
     private Long productId;
 
-    @NotNull(message = "Warehouse ID is required")
     private Long warehouseId;
 
     @NotNull(message = "Quantity change is required")
