@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory ERP</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: #fff; min-height: 100vh; display: flex; flex-direction: column; }
+        .hero { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px 20px; }
+        .hero h1 { font-size: 48px; margin-bottom: 16px; font-weight: 700; }
+        .hero p { font-size: 18px; color: #94a3b8; margin-bottom: 32px; max-width: 500px; }
+        .btn-group { display: flex; gap: 16px; }
+        .btn { padding: 14px 32px; border-radius: 8px; font-size: 16px; font-weight: 600; text-decoration: none; transition: all 0.2s; }
+        .btn-primary { background: #3b82f6; color: #fff; }
+        .btn-primary:hover { background: #2563eb; }
+        .btn-outline { background: transparent; color: #fff; border: 2px solid #fff; }
+        .btn-outline:hover { background: rgba(255,255,255,0.1); }
+        .features { display: flex; gap: 32px; margin-top: 60px; flex-wrap: wrap; justify-content: center; }
+        .feature { text-align: center; max-width: 200px; }
+        .feature h3 { margin: 12px 0 8px; font-size: 16px; }
+        .feature p { font-size: 13px; color: #94a3b8; }
+        .icon { font-size: 32px; }
+        footer { text-align: center; padding: 20px; color: #64748b; font-size: 13px; }
+    </style>
+</head><body>
+    <div class="hero">
+        <h1>Inventory ERP</h1>
+        <p>Simple inventory management for your business. Track products, monitor stock, and manage sales.</p>
+        <div class="btn-group">
+            <a href="/login" class="btn btn-primary">Sign In</a>
+            <a href="/register" class="btn btn-outline">Get Started</a>
+        </div>
+        <div class="features">
+            <div class="feature"><div class="icon">&#128722;</div><h3>Products</h3><p>Add and manage your products</p></div>
+            <div class="feature"><div class="icon">&#128230;</div><h3>Stock</h3><p>Track inventory levels</p></div>
+            <div class="feature"><div class="icon">&#128176;</div><h3>Sales</h3><p>Record and view sales</p></div>
+            <div class="feature"><div class="icon">&#128200;</div><h3>Reports</h3><p>Analytics and insights</p></div>
+        </div>
+    </div>
+    <footer>Inventory ERP &copy; 2026</footer>
+</body></html>
