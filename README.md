@@ -182,3 +182,8 @@ docker-compose up --build
 | `MAIL_PORT` | `587` | SMTP port |
 | `MAIL_USERNAME` | - | SMTP username |
 | `MAIL_PASSWORD` | - | SMTP password |
+
+
+
+## open for collabrations
+
